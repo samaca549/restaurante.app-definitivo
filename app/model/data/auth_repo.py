@@ -6,6 +6,9 @@ from firebase_admin import exceptions
 class AuthRepo:
     
     def __init__(self, auth_client: firebase_auth, is_ready_status: bool):
+        """
+        Inicializa el repositorio de autenticación.
+        """
         self.auth_client = auth_client
         self._is_ready = is_ready_status
         
@@ -14,11 +17,14 @@ class AuthRepo:
 
     @property
     def is_ready(self):
+        """ Propiedad para verificar el estado de la conexión. """
         return self._is_ready
 
     def login_usuario(self, email: str, password: str) -> tuple[str | None, str | None]:
         """ 
         Simula login usando Admin SDK (Solo valida existencia de email).
+        En un sistema real, el Admin SDK no debe usarse para login de clientes.
+        Retorna (uid, rol) o (None, mensaje_error).
         """
         if not self.is_ready:
             return None, "Error de conexión."
@@ -30,6 +36,7 @@ class AuthRepo:
             # (El Admin SDK no valida la contraseña, asumimos que es correcta si el email existe)
             
             # 2. Obtenemos el rol desde los Custom Claims
+            # (El rol en Auth es la fuente de verdad para la seguridad)
             rol = user.custom_claims.get('rol', 'cajero') if user.custom_claims else 'cajero'
             
             return user.uid, rol
@@ -41,7 +48,8 @@ class AuthRepo:
 
     def crear_usuario(self, email: str, password: str, rol: str = "cajero", nombre: str = "") -> str | str:
         """ 
-        Crea el usuario en Firebase Authentication (Admin SDK) y le asigna un rol.
+        Crea el usuario en Firebase Authentication (Admin SDK) y le asigna un rol
+        como un Custom Claim.
         """
         if not self.is_ready: return "Error de conexión."
             
@@ -53,8 +61,7 @@ class AuthRepo:
                 display_name=nombre
             )
             
-            # 2. Establece el Custom Claim para el rol
-            # (Esto es crucial para la seguridad de Firebase)
+            # 2. Establece el Custom Claim para el rol (MUY IMPORTANTE)
             self.auth_client.set_custom_user_claims(user.uid, {'rol': rol})
             
             return user.uid
@@ -66,14 +73,22 @@ class AuthRepo:
         except Exception as e:
             return f"Error al crear usuario: {e}"
 
+    # ✅ --- MÉTODO AÑADIDO PARA DESPEDIR EMPLEADOS --- ✅
     def eliminar_usuario_auth(self, uid: str) -> bool:
         """
-        ✅ NUEVO: Elimina un usuario de Firebase Auth (para Rollback).
+        Elimina un usuario de Firebase Authentication (para Rollback o Despido).
         """
-        if not self.is_ready: return False
+        if not self.is_ready: 
+            print(f"Error AuthRepo: No listo para eliminar {uid}")
+            return False
         try:
             self.auth_client.delete_user(uid)
+            print(f"Info AuthRepo: Usuario {uid} eliminado de Authentication.")
+            return True
+        except firebase_auth.UserNotFoundError:
+             # Si el usuario ya no existe en Auth, igual es un "éxito"
+            print(f"Info AuthRepo: Usuario {uid} ya estaba eliminado de Authentication.")
             return True
         except Exception as e:
-            print(f"ERROR AUTH REPO: Fallo al eliminar usuario {uid} de Auth: {e}")
+            print(f"ERROR AuthRepo: Fallo al eliminar usuario {uid} de Auth: {e}")
             return False

@@ -2,14 +2,16 @@
 
 class PersonalViewModel:
     
-    def __init__(self, db_repo):
+    # ✅ CORRECCIÓN 1: El constructor ahora recibe ambos repositorios
+    def __init__(self, auth_repo, db_repo):
         """
         Inicializa el ViewModel de Personal.
-        Asumimos que el DbRepo general maneja la colección 'usuarios' donde está el personal.
+        Necesita AuthRepo para borrar usuarios de Authentication.
+        Necesita DbRepo para borrar usuarios de Firestore ('usuarios').
         """
+        self.auth_repo = auth_repo
         self.db_repo = db_repo
         
-    # ✅ --- EL MÉTODO QUE FALTABA (Opción 1) --- ✅
     def listar_personal(self):
         """
         Obtiene y lista todos los empleados registrados en la colección 'usuarios'.
@@ -18,30 +20,20 @@ class PersonalViewModel:
             return "Error: Conexión a la base de datos no disponible."
             
         try:
-            # Asumimos que DbRepo tiene un método para obtener todos los documentos de una colección
             personal_docs = self.db_repo.obtener_todos_los_documentos('usuarios') 
             
             if not personal_docs:
                 return "No hay personal registrado en el sistema."
             
             respuesta = "==== LISTA DE EMPLEADOS ====\n"
-            respuesta += f"{'ID Interno (UID)':<25}{'Nombre':<30}{'Puesto (Rol)':<15}{'Salario (Mensual)':<20}\n"
-            respuesta += "-" * 90 + "\n"
+            respuesta += f"{'ID Interno (UID)':<30}{'Nombre':<30}{'Puesto (Rol)':<15}\n"
+            respuesta += "-" * 75 + "\n"
             
-            # Formateamos la salida
             for uid, datos in personal_docs.items():
                 nombre = datos.get('nombre', 'N/A')
                 rol = datos.get('rol', 'N/A').upper()
-                salario = datos.get('salario', 0.0)
-                
-                # Formateo del salario (asumiendo que se almacena)
-                salario_str = f"${salario:,.2f}" if isinstance(salario, (int, float)) and salario > 0 else "N/A"
-                
-                respuesta += f"{uid[:20]}...{uid[-4:]:<4}{nombre:<30}{rol:<15}{salario_str:<20}\n"
+                respuesta += f"{uid:<30}{nombre:<30}{rol:<15}\n"
 
-            # Nota: El salario no se almacena automáticamente en el AuthVM/DbRepo que creamos antes, 
-            # por lo que podría aparecer como 0.0 o N/A si no se usa 'Contratar nuevo empleado'.
-            respuesta += "\nNota: Si no se ve el salario, use 'Contratar nuevo empleado' (Opción 2) para establecerlo."
             return respuesta
             
         except Exception as e:
@@ -49,8 +41,7 @@ class PersonalViewModel:
 
     def contratar_empleado(self, nombre, puesto, salario):
         """
-        Opción 2: Registra datos adicionales de salario y puesto para un empleado existente.
-        Nota: El registro inicial de usuario (email/pass) debe hacerse desde el menú principal (Opción 2).
+        Actualiza el salario y puesto de un empleado existente en Firestore.
         """
         if not self.db_repo.is_ready:
             return "Error: Conexión a la base de datos no disponible."
@@ -58,26 +49,23 @@ class PersonalViewModel:
         if salario <= 0:
             return "Error: El salario debe ser un número positivo."
         
-        # Primero, necesitamos encontrar el UID del usuario por su nombre.
-        # Esto es complejo si varios usuarios tienen el mismo nombre.
-        # Por simplicidad, asumiremos que el nombre es único o se buscará el primero.
         try:
+            # 1. Encontrar el UID del empleado por su nombre
             personal_docs = self.db_repo.obtener_todos_los_documentos('usuarios')
+            if not personal_docs:
+                 return "Error: No se pudo leer la lista de personal."
+
             target_uid = None
-            
             for uid, datos in personal_docs.items():
                 if datos.get('nombre', '').lower().strip() == nombre.lower().strip():
                     target_uid = uid
                     break
             
             if not target_uid:
-                return f"Error: No se encontró un usuario registrado con el nombre '{nombre}'. Asegúrate de registrarlo primero."
+                return f"Error: No se encontró un usuario registrado con el nombre '{nombre}'."
                 
-            # Actualizamos el documento con los nuevos datos
+            # 2. Actualizamos el documento en Firestore
             datos_contrato = {'puesto': puesto.lower(), 'salario': salario}
-            
-            # Asumimos que el rol ya fue definido en el registro de usuario, por lo que 
-            # sólo actualizamos 'puesto' (si es diferente al rol) y 'salario'.
             exito = self.db_repo.actualizar_documento('usuarios', target_uid, datos_contrato)
             
             if exito:
@@ -88,38 +76,50 @@ class PersonalViewModel:
         except Exception as e:
             return f"Error al contratar/actualizar empleado: {e}"
 
-
+    # ✅ CORRECCIÓN 2: Lógica de despido actualizada
     def despedir_empleado(self, nombre):
         """
-        Opción 3: Elimina permanentemente a un empleado del sistema (colección 'usuarios').
+        Elimina permanentemente a un empleado de Firestore Y de Authentication.
         """
-        if not self.db_repo.is_ready:
-            return "Error: Conexión a la base de datos no disponible."
-            
+        if not self.db_repo.is_ready or not self.auth_repo.is_ready:
+            return "Error: Los repositorios de datos no están listos."
+
         try:
-            # Buscar el UID por nombre (misma lógica que contratar)
+            # 1. Encontrar el UID del empleado por su nombre
             personal_docs = self.db_repo.obtener_todos_los_documentos('usuarios')
+            if not personal_docs:
+                    return "Error: No se pudo leer la lista de personal."
+
             target_uid = None
+            target_email = None
             
             for uid, datos in personal_docs.items():
                 if datos.get('nombre', '').lower().strip() == nombre.lower().strip():
                     target_uid = uid
+                    target_email = datos.get('email', 'N/A')
                     break
             
             if not target_uid:
-                return f"Error: No se encontró un usuario registrado con el nombre '{nombre}'."
+                return f"Error: No se encontró un empleado con el nombre '{nombre}'."
 
-            # Impedir que se despida el usuario 'gerente' principal
-            if datos.get('rol', '').lower() == 'gerente' and nombre.lower().strip() == 'miguel samaca': 
-                 return "Error: No se puede despedir al Gerente Principal del sistema."
+            # 2. Iniciar el proceso de eliminación en dos pasos
+            print(f"Iniciando despido de: {nombre} (UID: {target_uid})...")
+
+            # 3. Eliminar de Firestore (Base de datos de perfiles)
+            exito_db = self.db_repo.eliminar_documento('usuarios', target_uid)
             
-            # Eliminamos el documento
-            exito = self.db_repo.eliminar_documento('usuarios', target_uid)
-            
-            if exito:
-                return f"Despido exitoso: El empleado '{nombre}' ha sido eliminado del sistema."
-            else:
-                return "Error al eliminar al empleado de la base de datos."
-                
+            if not exito_db:
+                # Si no se puede borrar de la DB, NO borramos de Auth.
+                return f"Error CRÍTICO: Se encontró al empleado, pero no se pudo eliminar de Firestore (DB)."
+
+            # 4. Eliminar de Firebase Authentication (Login)
+            exito_auth = self.auth_repo.eliminar_usuario_auth(target_uid)
+
+            if not exito_auth:
+                # El perfil de DB se borró, pero el login no. Es una advertencia.
+                return f"ADVERTENCIA: Empleado '{nombre}' eliminado de Firestore (DB), pero falló la eliminación de Authentication (Login).\nDebe eliminarse manualmente desde la consola de Firebase (Email: {target_email})."
+
+            return f"✅ Despido completado. El empleado '{nombre}' ha sido eliminado de Firestore y de Authentication."
+
         except Exception as e:
-            return f"Error al despedir empleado: {e}"
+            return f"Error inesperado durante el proceso de despido: {e}"

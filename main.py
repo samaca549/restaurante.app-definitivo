@@ -28,19 +28,17 @@ def main():
         # 1. Creamos los Repositorios (Conexión a Datos)
         db_repo = DbRepo(db, is_ready)
         auth_repo = AuthRepo(auth_service, is_ready)
-        
-        # ✅ Repositorios específicos de Firestore
         finanzas_repo = FinanzasRepo(db, is_ready) 
         inventario_repo = InventarioRepo(db, is_ready) 
 
         # 2. Creamos los ViewModels (Lógica de Negocio)
         auth_vm = AuthViewModel(auth_repo, db_repo)
-        pedidos_vm = PedidosViewModel(db_repo) # Pedidos usa DbRepo (que tiene los métodos de pedidos)
-        personal_vm = PersonalViewModel(db_repo) # Personal usa DbRepo (que tiene los métodos de usuarios)
-        
-        # ✅ Inyección correcta para Inventario y Finanzas
+        pedidos_vm = PedidosViewModel(db_repo) 
         inventario_vm = InventarioViewModel(inventario_repo) 
         finanzas_vm = FinanzasViewModel(finanzas_repo) 
+        
+        # ✅ CORRECCIÓN: Pasamos 'auth_repo' y 'db_repo' a PersonalViewModel
+        personal_vm = PersonalViewModel(auth_repo, db_repo) 
 
         # 3. Creamos la Interfaz de Usuario (View)
         ui = InterfazConsola(
