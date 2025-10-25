@@ -1,3 +1,11 @@
 # Firebase credentials
+# Excluye ambos nombres posibles
 service_account.json
+serviceAccountKey.json
+
+# Excluye la ruta donde podría estar
 app/service_account.json
+app/serviceAccountKey.json
+
+# EXCLUYE LAS VARIABLES DE ENTORNO
+.env
