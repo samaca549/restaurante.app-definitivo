@@ -132,3 +132,4 @@ class FinanzasViewModel:
             return f"Error: El monto '{monto_str}' no es un número válido."
         except Exception as e:
             return f"Error inesperado al registrar movimiento: {e}"
+        #cambios
