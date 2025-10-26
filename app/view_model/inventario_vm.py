@@ -1,99 +1,129 @@
 # app/view_model/inventario_vm.py
+# No se necesita 'import math'
 
 class InventarioViewModel:
     
     def __init__(self, inventario_repo):
+        """
+        Inicializa el ViewModel de Inventario con su Repositorio.
+        """
         self.inventario_repo = inventario_repo
-
-    def listar_inventario(self):
-        """Obtiene y formatea la lista completa del inventario."""
         
-        # 1. Verifica el estado del repositorio (usando la lógica de la captura)
+    def listar_inventario(self):
+        """
+        Obtiene y formatea la lista completa del inventario.
+        """
         if not self.inventario_repo.is_ready:
             return "Error: Conexión al repositorio de inventario no disponible."
-
-        # 2. Obtiene los productos (línea marcada en la captura)
+            
+        # 1. 'productos' es una LISTA, no un diccionario.
+        # Ej: [{'id': 'tomate', 'nombre': 'Tomates', ...}, {'id': 'papa', ...}]
         productos = self.inventario_repo.obtener_todo_inventario()
         
-        # Manejo de caso vacío
         if not productos:
             return "El inventario está vacío."
-
-        # 3. Formatea la respuesta
-        respuesta = "==== INVENTARIO ACTUAL ====\n"
-        respuesta += f"{'ID':<10}{'Nombre':<30}{'Cantidad':<15}{'Precio/Und':<15}\n"
-        respuesta += "-" * 70 + "\n"
-
-        for id_producto, data in productos.items():
-            nombre = data.get('nombre', 'N/A')
-            cantidad = data.get('cantidad', 0)
-            precio_unitario = data.get('precio', 0.0)
-
-            # Formateo de precio con dos decimales y separador de miles
-            precio_str = f"${precio_unitario:,.2f}"
             
-            respuesta += f"{id_producto:<10}{nombre:<30}{cantidad:<15}{precio_str:<15}\n"
+        respuesta = "==== INVENTARIO ACTUAL ====\n"
+        respuesta += f"{'ID':<20}{'Nombre':<30}{'Cantidad':<15}{'Precio Costo':<15}\n"
+        respuesta += "-" * 80 + "\n"
+        
+        # ✅ --- ESTA ES LA CORRECCIÓN --- ✅
+        # Iteramos sobre cada 'prod' (que es un diccionario) en la LISTA 'productos'.
+        # Ya no se usa ".items()".
+        for prod in productos:
+            
+            # 2. Extraemos los datos de cada diccionario 'prod'
+            nombre = prod.get('nombre', 'N/A')
+            cantidad = prod.get('cantidad', 0)
+            precio = prod.get('precio', 0.0)
+            item_id = prod.get('id', 'N/A') # El ID del documento
+            
+            # 3. Formateo simple (sin 'math')
+            try:
+                # Usamos f-string para formatear decimales y miles (esto es nativo de Python)
+                precio_str = f"${precio:,.2f}"
+                # Convertimos cantidad a string simple
+                cant_str = str(cantidad) 
+            except Exception:
+                cant_str = str(cantidad)
+                precio_str = f"${precio}"
 
-        respuesta += "-" * 70 + "\n"
+            respuesta += f"{item_id:<20}{nombre:<30}{cant_str:<15}{precio_str:<15}\n"
+            
         return respuesta
 
-    def agregar_producto(self, nombre, cantidad_str, precio_str):
+    def buscar_producto(self, nombre_parcial):
+        """
+        Busca un producto por nombre parcial.
+        """
         if not self.inventario_repo.is_ready:
-            return "Error: Repositorio de inventario no está listo."
+            return "Error: Repositorio no disponible."
             
-        try:
-            # Limpieza y conversión de cantidad
-            cantidad = int(cantidad_str.strip())
-            if cantidad <= 0:
-                return "Error: La cantidad debe ser un número entero positivo."
+        productos = self.inventario_repo.obtener_todo_inventario() # Sigue siendo una lista
+        resultados = []
+        nombre_buscado = nombre_parcial.lower()
+        
+        # Iteramos sobre la LISTA
+        for prod in productos:
+            if nombre_buscado in prod.get('nombre', '').lower():
+                resultados.append(prod)
+                
+        if not resultados:
+            return f"No se encontraron productos con el nombre '{nombre_parcial}'."
 
-            # Limpieza y conversión de precio (robusto para formatos)
-            precio_limpio = precio_str.strip().replace(" ", "") 
-            precio_limpio = precio_limpio.replace(".", "").replace(",", ".") # Asume formato latino
-            precio = float(precio_limpio)
+        respuesta = f"==== RESULTADOS PARA '{nombre_parcial.upper()}' ====\n"
+        for prod in resultados:
+            # Mostramos los datos de cada diccionario encontrado
+            respuesta += f"- ID: {prod.get('id')}, Nombre: {prod.get('nombre')}, Cantidad: {prod.get('cantidad')}, Precio Costo: ${prod.get('precio'):,.2f}\n"
             
-            if precio <= 0:
-                return "Error: El precio debe ser un número positivo."
+        return respuesta
 
-            # Generar ID simple basado en nombre
-            id_producto = nombre.lower().replace(' ', '_')
-            
-            producto_data = {
-                "nombre": nombre,
-                "cantidad": cantidad,
-                "precio": precio
-            }
 
-            exito = self.inventario_repo.guardar_producto(id_producto, producto_data)
-            
-            if exito:
-                return f"✅ Producto '{nombre}' agregado/actualizado en inventario."
-            else:
-                return "Error: No se pudo guardar el producto."
-
-        except ValueError:
-            return "Error: La cantidad y el precio deben ser números válidos."
-        except Exception as e:
-            return f"Error inesperado al agregar producto: {e}"
-
-    def actualizar_stock(self, id_producto, cantidad_nueva_str):
+    def agregar_o_actualizar_producto(self, nombre, cantidad, precio):
+        """
+        Agrega o actualiza un producto existente.
+        """
         if not self.inventario_repo.is_ready:
-            return "Error: Repositorio de inventario no está listo."
-            
-        try:
-            cantidad_nueva = int(cantidad_nueva_str.strip())
-            if cantidad_nueva < 0:
-                return "Error: La cantidad no puede ser negativa."
+            return "Error: Repositorio no disponible."
+        if not nombre or cantidad is None or precio is None:
+            return "Error: Todos los campos son obligatorios."
 
-            # El repositorio debe manejar la lógica de actualización en Firebase
-            exito = self.inventario_repo.actualizar_stock_producto(id_producto, cantidad_nueva)
-            
-            if exito:
-                return f"✅ Stock de '{id_producto}' actualizado a {cantidad_nueva} unidades."
-            else:
-                return f"Error: No se pudo actualizar el stock del producto '{id_producto}'. (¿Existe el ID?)"
+        # El ID será el nombre en minúsculas y con guiones bajos
+        item_id = nombre.lower().replace(" ", "_").strip()
+        if not item_id:
+             return "Error: Nombre de producto inválido."
 
-        except ValueError:
-            return "Error: La nueva cantidad debe ser un número entero."
-        except Exception as e:
-            return f"Error inesperado al actualizar stock: {e}"
+        data = {
+            'nombre': nombre,
+            'cantidad': float(cantidad), 
+            'precio': float(precio) # Precio de costo
+        }
+        
+        producto_existente = self.inventario_repo.buscar_producto_por_id(item_id)
+        
+        if self.inventario_repo.guardar_o_actualizar_producto(item_id, data):
+            accion = "actualizado" if producto_existente else "agregado"
+            return f"Producto '{nombre}' {accion} con éxito. (ID: {item_id})"
+        else:
+            return f"Error al guardar el producto '{nombre}'."
+
+    def eliminar_producto(self, nombre):
+        """
+        Elimina un producto.
+        """
+        if not self.inventario_repo.is_ready:
+            return "Error: Repositorio no disponible."
+        if not nombre:
+            return "Error: Debe proporcionar un nombre."
+            
+        item_id = nombre.lower().replace(" ", "_").strip()
+        
+        # Verificamos si existe antes de borrar
+        if not self.inventario_repo.buscar_producto_por_id(item_id):
+            return f"Error: No se encontró un producto con ID '{item_id}' (Nombre: {nombre})."
+        
+        # Si existe, lo borramos
+        if self.inventario_repo.eliminar_producto(item_id):
+            return f"Producto '{nombre}' eliminado con éxito (ID: {item_id})."
+        else:
+            return f"Error: No se pudo eliminar el producto '{nombre}'."
