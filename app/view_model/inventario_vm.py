@@ -89,4 +89,4 @@ class InventarioViewModel:
         if not nombre or not str(nombre).strip():
             return "Error: El nombre no puede estar vacío."
         ok = self.inventario_repo.eliminar_producto_por_nombre(nombre)
-        return f"✅ Producto '{nombre}' eliminado." if ok else f"⚠️ No se encontró '{nombre}'."
+        return f"✅ Producto '{nombre}' eliminado." if ok else f"⚠️ No se encontró '{nombre}'.." 
