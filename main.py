@@ -1,4 +1,9 @@
 # main.py
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno (al inicio, para Firebase y Gemini)
+load_dotenv() 
 
 from app.backend.firebase_init import db, auth_service, is_ready 
 
@@ -14,6 +19,8 @@ from app.view_model.pedidos_vm import PedidosViewModel
 from app.view_model.inventario_vm import InventarioViewModel
 from app.view_model.finanzas_vm import FinanzasViewModel
 from app.view_model.personal_vm import PersonalViewModel
+from app.view_model.ai_vm import AIViewModel # Importar el VM del AI
+
 # Importamos la Interfaz de Consola (Vista)
 from app.UI.interfaz import InterfazConsola
 
@@ -36,9 +43,10 @@ def main():
         pedidos_vm = PedidosViewModel(db_repo) 
         inventario_vm = InventarioViewModel(inventario_repo) 
         finanzas_vm = FinanzasViewModel(finanzas_repo) 
-        
-        # ✅ CORRECCIÓN: Pasamos 'auth_repo' y 'db_repo' a PersonalViewModel
         personal_vm = PersonalViewModel(auth_repo, db_repo) 
+        
+        # Pasamos TODOS los repos de contexto al AI
+        ai_vm = AIViewModel(inventario_repo, finanzas_repo, db_repo) 
 
         # 3. Creamos la Interfaz de Usuario (View)
         ui = InterfazConsola(
@@ -46,16 +54,22 @@ def main():
             pedidos_vm,   
             inventario_vm, 
             finanzas_vm,  
-            personal_vm   
+            personal_vm,
+            ai_vm # Pasamos el nuevo VM
         )
 
         print("Conexión a Firebase exitosa.")
+        
+        # Aviso si el AI no se conectó
+        if not ai_vm.is_ready:
+             print("⚠️ ADVERTENCIA: Asistente AI no disponible. Revisa GEMINI_API_KEY en .env.")
+             
+        # Esta línea inicia el menú de login y evita que la app se cierre.
         ui.mostrar_menu_inicio() 
 
     except Exception as e:
         print(f"\nERROR FATAL AL INICIAR: No se pudo iniciar la aplicación.")
         print(f"Detalle: {e}")
-        print("Verifica si los constructores de los ViewModels y Repositorios están correctos.")
 
 if __name__ == "__main__":
     main()
