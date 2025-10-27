@@ -56,7 +56,6 @@ class AIViewModel:
         if not self.inventario_repo.is_ready: return "Error: Inventario no disponible."
         productos = self.inventario_repo.obtener_todo_inventario()
         if not productos: return "El inventario está vacío."
-        # Limpieza para asegurar que solo datos serializables pasen a JSON
         productos_limpios = [{k: v for k, v in p.items() if isinstance(v, (str, int, float, bool, list))} for p in productos if isinstance(p, dict)]
         return json.dumps(productos_limpios, indent=2, ensure_ascii=False)
 
@@ -85,7 +84,7 @@ class AIViewModel:
             
         lista_personal = []
         for uid, datos in personal_docs.items():
-            if isinstance(datos, dict): # Asegurarse que 'datos' es un diccionario
+            if isinstance(datos, dict): 
                 lista_personal.append({
                     "nombre": datos.get('nombre', 'N/A'),
                     "rol": datos.get('rol', 'N/A'),
@@ -105,7 +104,7 @@ class AIViewModel:
         contexto_finanzas = self._obtener_contexto_finanzas()
         contexto_personal = self._obtener_contexto_personal()
         
-        # ✅ --- ESTE ES EL NUEVO PROMPT MEJORADO --- ✅
+        # ✅ --- PROMPT DE CONSULTOR DE NEGOCIOS --- ✅
         prompt_completo = f"""
         Actúa como un Consultor de Negocios y Analista de Marketing para un restaurante. 
         Tu trabajo es analizar los datos de contexto proporcionados y responder al gerente.
@@ -132,7 +131,6 @@ class AIViewModel:
         --- TU RESPUESTA (Consultor experto y conciso) ---
         """
 
-        # 3. Enviamos la pregunta y el contexto a Gemini
         try:
             print("...Contactando al Asistente AI...")
             response = _chat_session.send_message(prompt_completo)

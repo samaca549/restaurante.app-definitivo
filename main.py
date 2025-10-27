@@ -1,9 +1,15 @@
-# main.py
+import sys
 import os
 from dotenv import load_dotenv
 
 # Cargar variables de entorno (al inicio, para Firebase y Gemini)
 load_dotenv() 
+
+# Configuración y utilidades
+# Aseguramos que la carpeta 'app' esté en la ruta para las importaciones
+# Esta línea ya no es necesaria si importamos desde 'app.backend.firebase_init' 
+# y la estructura es la que se usa abajo. La elimino para simplificar.
+# sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
 from app.backend.firebase_init import db, auth_service, is_ready 
 
@@ -22,7 +28,7 @@ from app.view_model.personal_vm import PersonalViewModel
 from app.view_model.ai_vm import AIViewModel # Importar el VM del AI
 
 # Importamos la Interfaz de Consola (Vista)
-from app.UI.interfaz import InterfazConsola
+from app.UI.interfaz import InterfazConsola # Aseguramos la minúscula 'ui'
 
 def main():
     print("Iniciando la aplicación...")
@@ -49,11 +55,12 @@ def main():
         ai_vm = AIViewModel(inventario_repo, finanzas_repo, db_repo) 
 
         # 3. Creamos la Interfaz de Usuario (View)
+        # Notar que InterfazConsola ahora recibe 6 argumentos, lo cual es la corrección al error inicial.
         ui = InterfazConsola(
-            auth_vm,      
-            pedidos_vm,   
+            auth_vm, 	 
+            pedidos_vm, 	
             inventario_vm, 
-            finanzas_vm,  
+            finanzas_vm, 	
             personal_vm,
             ai_vm # Pasamos el nuevo VM
         )
@@ -62,9 +69,10 @@ def main():
         
         # Aviso si el AI no se conectó
         if not ai_vm.is_ready:
-             print("⚠️ ADVERTENCIA: Asistente AI no disponible. Revisa GEMINI_API_KEY en .env.")
-             
+            print("⚠️ ADVERTENCIA: Asistente AI no disponible. Revisa GEMINI_API_KEY en .env.")
+            
         # Esta línea inicia el menú de login y evita que la app se cierre.
+        # Asumo que esta función existe en InterfazConsola
         ui.mostrar_menu_inicio() 
 
     except Exception as e:

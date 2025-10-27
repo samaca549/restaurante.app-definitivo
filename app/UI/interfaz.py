@@ -35,11 +35,15 @@ class InterfazConsola:
         if isinstance(resultado, str):
             print(resultado)
         elif isinstance(resultado, list):
-            if not resultado: print("No se encontraron resultados.")
-            for item in resultado: print(f"- {item}")
+            if not resultado: 
+                print("No se encontraron resultados.")
+            for item in resultado: 
+                print(f"- {item}")
         elif isinstance(resultado, dict):
-            if not resultado: print("No se encontraron resultados.")
-            for key, value in resultado.items(): print(f"{key}: {value}")
+            if not resultado: 
+                print("No se encontraron resultados.")
+            for key, value in resultado.items(): 
+                print(f"{key}: {value}")
         else:
             print(str(resultado))
         print("-----------------")
@@ -65,17 +69,15 @@ class InterfazConsola:
                     resultado_login = self.auth_vm.intentar_login(email, password)
                     
                     if "Login exitoso" in resultado_login:
-                        # auth_vm actualiza self.auth_vm.usuario_actual
-                        # Lo copiamos a la interfaz para controlarla
                         self.usuario_actual = self.auth_vm.usuario_actual 
                         self.mostrar_resultado(resultado_login, pausa=True)
-                        self.run_menu_principal() # Ir al menú principal
+                        self.run_menu_principal() 
                     else:
                         self.mostrar_resultado(resultado_login, pausa=True)
                         
             elif opcion == '2':
                 print("Gracias por usar el sistema. ¡Adiós!")
-                break # Rompe el bucle y termina la aplicación
+                break 
             else:
                 self.mostrar_resultado("Opción no válida.", pausa=True)
                 
@@ -110,7 +112,6 @@ class InterfazConsola:
             print("Error: No hay usuario logueado.")
             return
             
-        # ✅ CORRECCIÓN: Usar .rol (notación de objeto, no .get)
         rol = self.usuario_actual.rol.lower()
         
         if rol == 'administrador':
@@ -123,7 +124,6 @@ class InterfazConsola:
     # --- MENÚS SEGÚN ROL ---
     
     def run_menu_administrador(self):
-        # ✅ CORRECCIÓN: Usar .nombre (notación de objeto)
         nombre = self.usuario_actual.nombre
         while self.usuario_actual:
             self._limpiar_pantalla()
@@ -152,13 +152,12 @@ class InterfazConsola:
                 self._run_menu_asistente()
             elif opcion == '9':
                 self.auth_vm.cerrar_sesion()
-                self.usuario_actual = None # Limpiar sesión de la UI
+                self.usuario_actual = None 
                 return 
             else:
                 self.mostrar_resultado("Opción no válida.", pausa=True)
 
     def run_menu_gerente(self):
-        # ✅ CORRECCIÓN: Usar .nombre (notación de objeto)
         nombre = self.usuario_actual.nombre
         while self.usuario_actual:
             self._limpiar_pantalla()
@@ -187,7 +186,6 @@ class InterfazConsola:
                 self.mostrar_resultado("Opción no válida.", pausa=True)
 
     def run_menu_operativo(self):
-        # ✅ CORRECCIÓN: Usar .nombre y .rol (notación de objeto)
         nombre = self.usuario_actual.nombre
         rol = self.usuario_actual.rol.lower()
         
@@ -212,16 +210,151 @@ class InterfazConsola:
                 self.mostrar_resultado("Opción no válida.", pausa=True)
 
     # --- MÓDULOS (Pedidos, Inventario, Finanzas, Personal) ---
-    # (¡Asegúrate de tener tus menús reales aquí!)
-    # (Estos son marcadores de posición)
+
     def run_menu_pedidos(self):
-        self.mostrar_resultado("Módulo de Pedidos no implementado.", pausa=True)
+        """ Muestra el submenú de gestión de pedidos. """
+        while True:
+            self._limpiar_pantalla()
+            print("====================================")
+            print("==== MÓDULO DE PEDIDOS ====")
+            print("====================================")
+            print("1. Listar pedidos activos")
+            print("2. Crear nuevo pedido")
+            print("3. Marcar pedido como 'Completado'")
+            print("4. Marcar pedido como 'Cancelado'")
+            print("9. Volver al menú principal")
+            print("------------------------------------")
+            
+            opcion = input("Selecciona una opción: ")
+            
+            if opcion == '1':
+                resultado = self.pedidos_vm.listar_pedidos_activos()
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '2':
+                print("--- Nuevo Pedido ---")
+                mesa = input("Mesa: ")
+                items_str = input("Items (ej: tomate,papa,arroz): ")
+                items = [item.strip() for item in items_str.split(',')]
+                resultado = self.pedidos_vm.crear_pedido(mesa, items) 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '3':
+                pedido_id = input("ID del pedido a completar: ")
+                resultado = self.pedidos_vm.actualizar_estado_pedido(pedido_id, "completado") 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '4':
+                pedido_id = input("ID del pedido a cancelar: ")
+                resultado = self.pedidos_vm.actualizar_estado_pedido(pedido_id, "cancelado") 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '9':
+                break
+            else:
+                self.mostrar_resultado("Opción no válida.", pausa=True)
+
     def run_menu_inventario(self):
-        self.mostrar_resultado("Módulo de Inventario no implementado.", pausa=True)
+        """ Muestra el submenú de gestión de inventario. """
+        while True:
+            self._limpiar_pantalla()
+            print("====================================")
+            print("==== MÓDULO DE INVENTARIO ====")
+            print("====================================")
+            print("1. Listar inventario")
+            print("2. Buscar producto")
+            print("3. Agregar o Actualizar producto")
+            print("4. Eliminar producto")
+            print("9. Volver al menú principal")
+            print("------------------------------------")
+            
+            opcion = input("Selecciona una opción: ")
+            
+            if opcion == '1':
+                resultado = self.inventario_vm.listar_inventario() 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '2':
+                nombre = input("Ingresa el nombre (o parte del nombre) a buscar: ")
+                resultado = self.inventario_vm.buscar_producto(nombre) 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '3':
+                print("--- Agregar/Actualizar Producto ---")
+                nombre = input("Nombre del producto: ").strip()
+                cantidad_str = input("Cantidad (ej: 10 o 2.5): ").strip()
+                precio_str = input("Precio de costo (ej: 1500.50): ").strip()
+                resultado = self.inventario_vm.agregar_o_actualizar_producto(nombre, cantidad_str, precio_str) 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '4':
+                print("--- Eliminar Producto ---")
+                nombre = input("Nombre EXACTO del producto a eliminar: ").strip()
+                resultado = self.inventario_vm.eliminar_producto(nombre) 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '9':
+                break
+            else:
+                self.mostrar_resultado("Opción no válida.", pausa=True)
+
     def run_menu_finanzas(self):
-        self.mostrar_resultado("Módulo de Finanzas no implementado.", pausa=True)
+        """ Muestra el submenú de gestión de finanzas. """
+        while True:
+            self._limpiar_pantalla()
+            print("====================================")
+            print("==== MÓDULO DE FINANZAS ====")
+            print("====================================")
+            print("1. Ver balance de movimientos")
+            print("2. Registrar gasto manual")
+            print("3. Registrar ingreso manual")
+            print("9. Volver al menú principal")
+            print("------------------------------------")
+            
+            opcion = input("Selecciona una opción: ")
+            
+            if opcion == '1':
+                resultado = self.finanzas_vm.obtener_balance() 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '2':
+                print("--- Registrar Gasto ---")
+                descripcion = input("Descripción del gasto: ")
+                monto_str = input("Monto (ej: 50000): ")
+                resultado = self.finanzas_vm.registrar_movimiento(descripcion, monto_str, "gasto") 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '3':
+                print("--- Registrar Ingreso ---")
+                descripcion = input("Descripción del ingreso: ")
+                monto_str = input("Monto (ej: 100000): ")
+                resultado = self.finanzas_vm.registrar_movimiento(descripcion, monto_str, "ingreso") 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '9':
+                break
+            else:
+                self.mostrar_resultado("Opción no válida.", pausa=True)
+
     def run_menu_personal(self):
-        self.mostrar_resultado("Módulo de Personal no implementado.", pausa=True)
+        """ Muestra el submenú de gestión de personal. """
+        while True:
+            self._limpiar_pantalla()
+            print("====================================")
+            print("==== MÓDULO DE PERSONAL ====")
+            print("====================================")
+            print("1. Listar todo el personal")
+            print("2. Eliminar empleado (por email)")
+            print("9. Volver al menú principal")
+            print("------------------------------------")
+            
+            opcion = input("Selecciona una opción: ")
+            
+            if opcion == '1':
+                resultado = self.personal_vm.listar_personal() 
+                self.mostrar_resultado(resultado, pausa=True)
+            elif opcion == '2':
+                print("--- Eliminar Empleado ---")
+                email = input("Email del empleado a eliminar: ").strip()
+                confirmacion = input(f"¿Seguro que deseas eliminar a {email}? Esta acción no se puede deshacer. (s/n): ").lower()
+                if confirmacion == 's':
+                    resultado = self.personal_vm.eliminar_empleado(email) 
+                    self.mostrar_resultado(resultado, pausa=True)
+                else:
+                    self.mostrar_resultado("Eliminación cancelada.", pausa=True)
+            elif opcion == '9':
+                break
+            else:
+                self.mostrar_resultado("Opción no válida.", pausa=True)
     
     
     # --- MENÚ DEL ASISTENTE AI ---
@@ -232,7 +365,7 @@ class InterfazConsola:
         self._limpiar_pantalla()
         
         if not self.ai_vm.is_ready:
-            self.mostrar_resultado("El Asistente AI no está disponible. Revisa la GEMINI_API_KEY en tu .env.")
+            self.mostrar_resultado("El Asistente AI no está disponible. Revisa la GEMINI_API_KEY en tu .env.", pausa=True)
             return
 
         print("======================================================")
@@ -246,15 +379,12 @@ class InterfazConsola:
         while True:
             pregunta = input("\n[Tú]: ")
             
-            # ✅ LÓGICA DE SALIDA
             if pregunta.lower().strip() in ('salir', 'back', 'volver'):
-                break # Rompe el bucle del chat y regresa al menú anterior
+                break 
             
             if not pregunta.strip():
                 continue
 
-            # Llama al ViewModel, que inyecta el contexto y pregunta al IA
             respuesta_ia = self.ai_vm.preguntar_al_asistente(pregunta)
             
-            # Muestra la respuesta formateada (sin pausa)
             self.mostrar_resultado(respuesta_ia, pausa=False)
