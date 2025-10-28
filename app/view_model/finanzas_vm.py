@@ -1,13 +1,13 @@
-# app/view_model/finanzas_vm.py
+
 import datetime
 try:
     from zoneinfo import ZoneInfo
     TZ_COLOMBIA = ZoneInfo("America/Bogota")
 except ImportError:
-    # Fallback para Python < 3.9
+
     TZ_COLOMBIA = datetime.timezone(datetime.timedelta(hours=-5), name="America/Bogota")
 
-# Helper class
+
 class MovimientoFinanciero:
     def __init__(self, id_mov, tipo, descripcion, monto, fecha_hora):
         self.id = id_mov
@@ -63,7 +63,7 @@ class FinanzasViewModel:
             if ingresos_totales == 0.0:
                 return f"No se registraron ingresos (pedidos finalizados) en la fecha {hoy.isoformat()}."
             
-            # ✅ CORRECCIÓN 1: Formato f-string usando :,.2f
+     
             return f"Ingresos totales del día ({hoy.isoformat()}): ${ingresos_totales:,.2f}"
         
         except Exception as e:
@@ -92,7 +92,6 @@ class FinanzasViewModel:
             fecha_str = fecha_hora_str[:16].replace('T', ' ') if fecha_hora_str else 'N/A'
             balance_parcial += monto 
             
-            # ✅ CORRECCIÓN 2: Asegurar formato :,.2f para monto en el reporte de gastos
             monto_str = f"${monto:,.2f}"
             if tipo == 'EGRESO':
                 monto_str = f"(${abs(monto):,.2f})" # Paréntesis para negativo
