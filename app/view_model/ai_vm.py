@@ -1,28 +1,26 @@
-# app/view_model/ai_vm.py
+
 import os
 import json
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv()
 
 # --- CONFIGURACIÓN DE GEMINI ---
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 _chat_session = None
-_is_ai_ready = False # Inicializa como False por defecto
+_is_ai_ready = False 
 
 try:
     if API_KEY:
         genai.configure(api_key=API_KEY)
         
-        # ✅ MODELO CONFIRMADO: Usamos el que te funcionó
+ 
         model = genai.GenerativeModel('gemini-2.5-flash') 
         
         _chat_session = model.start_chat(history=[])
         
-        # Establecer _is_ai_ready a True DESPUÉS de una inicialización exitosa
         _is_ai_ready = True 
         print("✅ Asistente AI (Gemini) inicializado correctamente.")
         
@@ -35,14 +33,14 @@ except Exception as e:
 
 class AIViewModel:
     
-    # Añadido 'db_repo' para acceder al PERSONAL
+
     def __init__(self, inventario_repo, finanzas_repo, db_repo):
         """
         Inicializa el VM con los repositorios necesarios para obtener el contexto.
         """
         self.inventario_repo = inventario_repo
         self.finanzas_repo = finanzas_repo
-        self.db_repo = db_repo # Repositorio de la DB (para 'usuarios')
+        self.db_repo = db_repo 
         
     @property
     def is_ready(self):
