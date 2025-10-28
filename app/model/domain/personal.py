@@ -1,4 +1,3 @@
-# app/model/domain/personal.py
 
 class Empleado:
     """ Representa a un empleado """
