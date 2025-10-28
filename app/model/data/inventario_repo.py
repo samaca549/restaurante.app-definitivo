@@ -17,7 +17,6 @@ class InventarioRepo:
             inventario = []
             for doc in docs:
                 data = doc.to_dict() or {}
-                # Asegurar que siempre devolvemos (id, dict)
                 inventario.append((doc.id, dict(data)))
             return inventario
         except Exception as e:
@@ -35,7 +34,6 @@ class InventarioRepo:
             resultados = []
             for doc in docs:
                 data = doc.to_dict() or {}
-                # soporta varios nombres de campo
                 campo_nombre = str(
                     data.get('nombre')
                     or data.get('Nombre')
