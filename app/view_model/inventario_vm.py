@@ -12,27 +12,25 @@ class InventarioViewModel:
          - {'id': id, ...}
          - dict (con 'id' dentro)
         """
-        # tupla/lista (id, data)
+
         if isinstance(item, (list, tuple)) and len(item) == 2:
             pid, data = item
             if isinstance(data, dict):
                 return str(pid), dict(data)
-            # si data no es dict, intentar convertir
+
             return str(pid), {"valor": data}
 
-        # dict que incluye 'id'
         if isinstance(item, dict):
             if 'id' in item:
                 pid = item.get('id')
                 data = dict(item)
                 data.pop('id', None)
                 return str(pid), data
-            # dict sin 'id' -> id = nombre si existe
+
             nombre = item.get('nombre') or item.get('Nombre') or item.get('producto')
             pid = nombre if nombre else 'N/A'
             return str(pid), dict(item)
 
-        # cualquier otro caso: devolver como valor bruto
         return 'N/A', {"valor": item}
 
     def _formatear_item(self, doc_id, data):
@@ -83,10 +81,10 @@ class InventarioViewModel:
             return "Error: El nombre no puede estar vacío."
         nombre_norm = str(nombre).strip()
         ok = self.inventario_repo.agregar_o_actualizar_producto_por_nombre(nombre_norm, cantidad, precio)
-        return f"✅ Producto '{nombre_norm}' agregado/actualizado." if ok else f"❌ No se pudo agregar/actualizar '{nombre_norm}'."
+        return f" Producto '{nombre_norm}' agregado/actualizado." if ok else f"❌ No se pudo agregar/actualizar '{nombre_norm}'."
 
     def eliminar_producto(self, nombre):
         if not nombre or not str(nombre).strip():
             return "Error: El nombre no puede estar vacío."
         ok = self.inventario_repo.eliminar_producto_por_nombre(nombre)
-        return f"✅ Producto '{nombre}' eliminado." if ok else f"⚠️ No se encontró '{nombre}'.." 
+        return f" Producto '{nombre}' eliminado." if ok else f" No se encontró '{nombre}'.." 
