@@ -48,9 +48,7 @@ class AIViewModel:
         return _is_ai_ready
 
     def _obtener_contexto_inventario(self):
-        """
-        Devuelve el inventario en formato JSON para que el IA lo analice.
-        """
+ 
         if not self.inventario_repo.is_ready: return "Error: Inventario no disponible."
         productos = self.inventario_repo.obtener_todo_inventario()
         if not productos: return "El inventario está vacío."
