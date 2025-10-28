@@ -15,7 +15,7 @@ class DbRepo:
     def is_ready(self):
         return self._is_ready
 
-    # --- Métodos de Autenticación y Registro ---
+
     def obtener_datos_usuario(self, uid: str) -> tuple[str | None, str | None]:
         if not self.is_ready: return None, None
         try:
@@ -44,7 +44,6 @@ class DbRepo:
             print(f"ERROR DB: Fallo al crear registro de usuario {uid}: {e}")
             return False
 
-    # --- Métodos Genéricos (Para PersonalViewModel) ---
     def obtener_todos_los_documentos(self, collection_name: str) -> dict | None:
         if not self.is_ready: return None
         try:
@@ -57,7 +56,6 @@ class DbRepo:
     def actualizar_documento(self, collection_name: str, doc_id: str, data: dict) -> bool:
         if not self.is_ready: return False
         try:
-            # Usamos merge=True para no sobrescribir datos, solo actualizar
             self.db.collection(collection_name).document(doc_id).set(data, merge=True)
             return True
         except Exception as e:
@@ -73,7 +71,7 @@ class DbRepo:
             print(f"ERROR DB: Fallo al eliminar documento {doc_id}: {e}")
             return False
 
-    # --- Métodos de Pedidos (Para PedidosViewModel) ---
+
     def obtener_menu(self):
         if not self.is_ready: return []
         try:
