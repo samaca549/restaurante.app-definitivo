@@ -22,13 +22,13 @@ try:
         _chat_session = model.start_chat(history=[])
         
         _is_ai_ready = True 
-        print("✅ Asistente AI (Gemini) inicializado correctamente.")
+        print(" Asistente AI (Gemini) inicializado correctamente.")
         
     else:
-        print("❌ ERROR AI: La clave GEMINI_API_KEY no se encontró en el archivo .env")
+        print(" ERROR AI: La clave GEMINI_API_KEY no se encontró en el archivo .env")
 
 except Exception as e:
-    print(f"❌ ERROR AI: No se pudo configurar Gemini. Revisa la clave. Detalle: {e}")
+    print(f" ERROR AI: No se pudo configurar Gemini. Revisa la clave. Detalle: {e}")
 
 
 class AIViewModel:
@@ -102,7 +102,7 @@ class AIViewModel:
         contexto_finanzas = self._obtener_contexto_finanzas()
         contexto_personal = self._obtener_contexto_personal()
         
-        # ✅ --- PROMPT DE CONSULTOR DE NEGOCIOS --- ✅
+   
         prompt_completo = f"""
         Actúa como un Consultor de Negocios y Analista de Marketing para un restaurante. 
         Tu trabajo es analizar los datos de contexto proporcionados y responder al gerente.
