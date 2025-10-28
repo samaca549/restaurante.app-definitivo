@@ -1,5 +1,3 @@
-# app/model/domain/pedido.py
-# Define los "moldes" para los datos de pedidos e inventario
 
 class Pedido:
     """ Representa un Pedido. Es solo un molde de datos """
