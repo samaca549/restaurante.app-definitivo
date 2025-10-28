@@ -1,4 +1,4 @@
-# app/UI/interfaz.py
+
 import os 
 from app.view_model.auth_vm import AuthViewModel
 from app.view_model.pedidos_vm import PedidosViewModel
@@ -6,12 +6,11 @@ from app.view_model.inventario_vm import InventarioViewModel
 from app.view_model.finanzas_vm import FinanzasViewModel
 from app.view_model.personal_vm import PersonalViewModel
 from app.view_model.ai_vm import AIViewModel
-# Asumimos que la clase 'Usuario' está definida en auth_vm.py
+
 
 
 class InterfazConsola: 
-    
-    # Añadido 'ai_vm' al constructor
+ 
     def __init__(self, auth_vm, pedidos_vm, inventario_vm, finanzas_vm, personal_vm, ai_vm):
         self.auth_vm = auth_vm
         self.pedidos_vm = pedidos_vm
@@ -19,11 +18,10 @@ class InterfazConsola:
         self.finanzas_vm = finanzas_vm
         self.personal_vm = personal_vm
         self.ai_vm = ai_vm
-        
-        # Estado de la sesión (self.usuario_actual será un OBJETO Usuario)
+      
         self.usuario_actual = None
         
-    # --- UTILIDADES ---
+
     def _limpiar_pantalla(self):
         os.system('cls' if os.name == 'nt' else 'clear') 
 
