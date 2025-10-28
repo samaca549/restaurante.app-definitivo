@@ -1,4 +1,3 @@
-# app/model/data/inventario_repo.py
 
 class InventarioRepo:
     def __init__(self, db, is_ready):
