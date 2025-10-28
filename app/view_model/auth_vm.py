@@ -1,9 +1,7 @@
-# app/view_model/auth_vm.py
 
-# Asumimos que DbRepo y AuthRepo están en app/model/data
 from app.model.data.db_repo import DbRepo 
 from app.model.data.auth_repo import AuthRepo
-# Asumimos que Usuario está en app/model/domain
+
 from app.model.domain.usuario import Usuario
 
 class AuthViewModel:
@@ -18,8 +16,7 @@ class AuthViewModel:
         Intenta autenticar al usuario y, si tiene éxito, carga sus datos
         desde la base de datos (DbRepo).
         """
-        
-        # 1. El Repo devuelve (uid, rol_auth) o (None, mensaje_error)
+
         uid, resultado = self.auth_repo.login_usuario(email, password)
         
         if not uid:
@@ -43,18 +40,15 @@ class AuthViewModel:
         """
         
         try:
-            # 1. Crear el usuario en Firebase Auth (pasando TODOS los datos)
-            # (AuthRepo se encarga de asignar el 'rol' como custom claim)
+
             uid = self.auth_repo.crear_usuario(email, password, rol, nombre)
             
             if "Error:" in str(uid):
-                return uid # Devuelve el mensaje de error de AuthRepo
-                
-            # 3. Guardar el rol, nombre y email en Firestore
+                return uid 
             exito_db = self.db_repo.crear_registro_usuario(uid, email, nombre, rol)
             
             if not exito_db:
-                 # Rollback: Si falla Firestore, debemos borrar el usuario de Auth
+
                  print(f"ERROR CRÍTICO: Falló el registro en DB. Revirtiendo creación en Auth para UID {uid}")
                  self.auth_repo.eliminar_usuario_auth(uid) # (Necesitarás implementar esto en AuthRepo)
                  return "Error: Falló el guardado en Base de Datos. Se revirtió la creación de Auth."
@@ -72,7 +66,7 @@ class AuthViewModel:
         
     def verificar_rol_acceso(self, roles_permitidos: list) -> bool:
         """ 
-        ✅ Lógica de permisos actualizada.
+         Lógica de permisos actualizada.
         Verifica si el usuario actual tiene permiso.
         """
         if not self.usuario_actual:
@@ -80,13 +74,10 @@ class AuthViewModel:
             
         rol_actual = self.usuario_actual.rol.lower()
         
-        # 1. Administrador siempre tiene acceso
         if rol_actual == 'administrador':
             return True
-            
-        # 2. Gerente tiene acceso si 'administrador' NO es requerido
+
         if rol_actual == 'gerente' and 'administrador' not in roles_permitidos:
             return True
-            
-        # 3. El resto de roles deben coincidir exactamente
+
         return rol_actual in roles_permitidos
